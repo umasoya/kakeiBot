@@ -3,7 +3,7 @@ export const ChannelAccessToken: string = PropertiesService.getScriptProperties(
 // リプライURL
 export const ReplyUrl: string = 'https://api.line.me/v2/bot/message/reply';
 // 認証ユーザー
-export const authenticatedUsers: string[] = [
+export const AuthenticatedUsers: string[] = [
   // yasuto
   PropertiesService.getScriptProperties().getProperty('user_id_yasuto')!,
 ];

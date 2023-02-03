@@ -37,15 +37,22 @@ const reply = (eventData: EventData, message: string) => {
   UrlFetchApp.fetch(ReplyUrl, options);
 };
 
-// 操作対象のシートを取得
-const getTargetSheet = (): GoogleAppsScript.Spreadsheet.Sheet => {
+/**
+ *  Get target sheet from date.
+ *
+ * @param dayjs- target date
+ * @returns Target sheet.
+ */
+const getTargetSheet = (date: dayjs.Dayjs): GoogleAppsScript.Spreadsheet.Sheet => {
   const id: string = PropertiesService.getScriptProperties().getProperty('spread_sheet_id')!;
   const spreadSheet: GoogleAppsScript.Spreadsheet.Spreadsheet = SpreadsheetApp.openById(id);
-  const now: Date = new Date();
-  // デフォルトは当月、入力があればその月のシート
-  const sheet: GoogleAppsScript.Spreadsheet.Sheet = spreadSheet.getSheetByName(
-    `${now.getFullYear()}${now.getMonth()}`,
-  )!;
+  const sheet: GoogleAppsScript.Spreadsheet.Sheet | null = spreadSheet.getSheetByName(
+    `${date.format('YYYYMM')}`,
+  );
+
+  if (sheet === null) {
+    throw new Error(`Target sheet is not exists. [${date.year()}${date.month() + 1}]`);
+  }
 
   return sheet;
 };
@@ -65,27 +72,131 @@ const getTargetDate = (text: string): [dayjs.Dayjs, string[]] => {
   return [dayjs(), textArr];
 };
 
+const findRow = (date: dayjs.Dayjs, sheet: GoogleAppsScript.Spreadsheet.Sheet): number => {
+  const dateStr: string = date.format('MM月DD日');
+  for (let i = 3; i <= sheet.getRange(3, 2, 31).getNumRows(); i++) {
+    if (sheet.getRange(i, 2).getDisplayValue() === dateStr) {
+      return i;
+    }
+  }
+  throw new Error('Cannot find target row.');
+};
+
 /**
- * POSTの受信処理
+ *
+ * @param sheet - Target sheet.
+ * @param rows  - Items. 'ex. 日用品 1500'
+ */
+const writeItems = (
+  date: dayjs.Dayjs,
+  sheet: GoogleAppsScript.Spreadsheet.Sheet,
+  lines: string[],
+) => {
+  const typeList: string[] = [
+    '食材費', // col: 3
+    '外食費', // col: 4
+    '日用品', // col: 5
+    '家賃代', // col: 6
+    '水道代', // col: 7
+    '電気代', // col: 8
+    'ガス代', // col: 9
+    '通信費', // col: 10
+    '貯金', // col: 11
+  ];
+  const row: number = findRow(date, sheet); // target row number
+
+  // eslint-disable-next-line
+  for (const line of lines) {
+    const arr: string[] = line.split(/\s+/, 2);
+    // invalid type
+    if (!typeList.includes(arr[0])) {
+      throw new Error(`unknown type.[${arr[0]}]`);
+    }
+    // non-numeric
+    if (!arr[1].match(/-?\d+/)) {
+      throw new Error(`invalid value.[${arr[1]}]`);
+    }
+    const type: string = arr[0];
+    const value: number = Number(arr[1]);
+    let col: number;
+
+    switch (type) {
+      case '食材費':
+        col = 3;
+        break;
+      case '外食費':
+        col = 4;
+        break;
+      case '日用品':
+        col = 5;
+        break;
+      case '家賃代':
+        col = 6;
+        break;
+      case '水道代':
+        col = 7;
+        break;
+      case '電気代':
+        col = 8;
+        break;
+      case 'ガス代':
+        col = 9;
+        break;
+      case '通信費':
+        col = 10;
+        break;
+      case '貯金':
+        col = 11;
+        break;
+      default:
+        throw new Error(`failed type parse.[${type}]`);
+        break;
+    }
+    // write to cell
+    const cell = sheet.getRange(row, col);
+    const formula = cell.getFormula();
+
+    // if empty
+    if (formula === '=0' || formula === '') {
+      cell.setFormula(`=${value}`);
+      continue;
+    }
+
+    // not empty
+    if (value < 0) {
+      cell.setFormula(`${formula}${value}`);
+      continue;
+    }
+
+    cell.setFormula(`${formula}+${value}`);
+  }
+};
+
+/**
+ * Receive HTTP POST
  *
  * @param e - POST Data
  */
 export const doPost = (e: any) => {
   const eventData: EventData = JSON.parse(e.postData.contents).events[0];
-  // ロギング
+  // logging
   logging(e);
 
   try {
-    // ユーザー認証
+    // User authentication
     userAuthentication(eventData.source.userId);
 
-    // メッセージ
+    // message from user
     const message: string = eventData.message.text;
 
     // 対象日を取得
     const [targetDate, rows]: [dayjs.Dayjs, string[]] = getTargetDate(message);
 
-    const sheet: GoogleAppsScript.Spreadsheet.Sheet = getTargetSheet();
+    // Get target sheet from targetDay.
+    const sheet: GoogleAppsScript.Spreadsheet.Sheet = getTargetSheet(targetDate);
+
+    // Write items to sheet.
+    writeItems(targetDate, sheet, rows);
 
     // @debug オウム返し
     reply(eventData, eventData.message.text);

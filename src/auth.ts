@@ -1,7 +1,7 @@
-import { authenticatedUsers } from './const';
+import { AuthenticatedUsers } from './const';
 
 export const userAuthentication = (userId: string) => {
-  if (authenticatedUsers.includes(userId)) {
+  if (AuthenticatedUsers.includes(userId)) {
     return;
   }
   throw new Error('unauthorized');

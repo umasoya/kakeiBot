@@ -22,5 +22,6 @@ module.exports = {
     'import/prefer-default-export': 'off',
     '@typescript-eslint/quotes': ['error', 'single'],
     'tsdoc/syntax': 'warn',
+    'no-continue': 'off',
   },
 };

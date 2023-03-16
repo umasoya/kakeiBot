@@ -3,7 +3,7 @@ import ja = require('dayjs/locale/ja');
 import customParseFormat = require('dayjs/plugin/customParseFormat');
 import { logging } from './logging';
 import { EventData } from './interface';
-import { ChannelAccessToken, ReplyUrl } from './const';
+import { ChannelAccessToken, helpMessage, ReplyUrl } from './const';
 import { userAuthentication } from './auth';
 
 dayjs.locale(ja);
@@ -173,6 +173,76 @@ const writeItems = (
 };
 
 /**
+ * Get summary data text
+ *
+ * @param sheet - target sheet
+ */
+const getSummaryText = (
+  sheet: GoogleAppsScript.Spreadsheet.Sheet,
+  targetDate: dayjs.Dayjs,
+): string => {
+  const summaries: string[] = [];
+  const separator: string = '====================';
+
+  summaries.push(`${targetDate.format('YYYY/MM')}`);
+  summaries.push(separator);
+
+  for (let col = 3; col < 13; col++) {
+    let type: string;
+    switch (col) {
+      case 3:
+        type = '食材費';
+        break;
+      case 4:
+        type = '外食費';
+        break;
+      case 5:
+        type = '日用品';
+        break;
+      case 6:
+        type = '家賃   ';
+        break;
+      case 7:
+        type = '水道代';
+        break;
+      case 8:
+        type = '電気代';
+        break;
+      case 9:
+        type = 'ガス代';
+        break;
+      case 10:
+        type = '通信費';
+        break;
+      case 11:
+        type = '貯金   ';
+        break;
+      default:
+        type = '合計   ';
+        break;
+    }
+    if (col === 12) summaries.push(separator);
+    summaries.push(`${type}: ${sheet.getRange(34, col).getDisplayValue()}`);
+  }
+  return summaries.join('\n');
+};
+
+/**
+ *  If message is 'help', return help text.
+ * @param message - userMessage
+ */
+const checkHelp = (message: string) => {
+  if (
+    (message.match(/[a-zA-Z]{4}/) && message.toLowerCase() === 'help')
+    || message === 'へるぷ'
+    || message === 'ヘルプ'
+  ) {
+    return helpMessage;
+  }
+  return '';
+};
+
+/**
  * Receive HTTP POST
  *
  * @param e - POST Data
@@ -189,6 +259,12 @@ export const doPost = (e: any) => {
     // message from user
     const message: string = eventData.message.text;
 
+    const help: string = checkHelp(message);
+    if (help) {
+      reply(eventData, help);
+      return;
+    }
+
     // 対象日を取得
     const [targetDate, rows]: [dayjs.Dayjs, string[]] = getTargetDate(message);
 
@@ -198,8 +274,10 @@ export const doPost = (e: any) => {
     // Write items to sheet.
     writeItems(targetDate, sheet, rows);
 
-    // @debug オウム返し
-    reply(eventData, eventData.message.text);
+    // Get summary text
+    const summary: string = getSummaryText(sheet, targetDate);
+
+    reply(eventData, summary);
   } catch (err: any) {
     reply(eventData, err.message);
   }

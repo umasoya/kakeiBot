@@ -235,7 +235,10 @@ const getSummaryText = (
   }
 
   // remaining money
-  summaries.push(`今月の残金: ${sheet.getRange(22, 16).getDisplayValue()}`);
+  const income: number = Number(sheet.getRange(22, 16).getValue());
+  const expenditure: number = Number(sheet.getRange(34, 12).getValue());
+  const balance = (income - expenditure);
+  summaries.push(`残金   : ¥${balance.toLocaleString()}`);
 
   return summaries.join('\n');
 };

@@ -3,7 +3,12 @@ import ja = require('dayjs/locale/ja');
 import customParseFormat = require('dayjs/plugin/customParseFormat');
 import { logging } from './logging';
 import { EventData } from './interface';
-import { ChannelAccessToken, helpMessage, ReplyUrl } from './const';
+import {
+  ChannelAccessToken,
+  HelpMessage,
+  ReplyUrl,
+  Separator,
+} from './const';
 import { userAuthentication } from './auth';
 
 dayjs.locale(ja);
@@ -182,11 +187,14 @@ const getSummaryText = (
   targetDate: dayjs.Dayjs,
 ): string => {
   const summaries: string[] = [];
-  const separator: string = '====================';
 
+  // target YYYY/MM
   summaries.push(`${targetDate.format('YYYY/MM')}`);
-  summaries.push(separator);
 
+  // separator
+  summaries.push(Separator);
+
+  // item summary
   for (let col = 3; col < 13; col += 1) {
     let type: string;
     switch (col) {
@@ -221,9 +229,13 @@ const getSummaryText = (
         type = '合計   ';
         break;
     }
-    if (col === 12) summaries.push(separator);
+    // separator
+    if (col === 12) summaries.push(Separator);
     summaries.push(`${type}: ${sheet.getRange(34, col).getDisplayValue()}`);
   }
+
+  // remaining money
+
   return summaries.join('\n');
 };
 
@@ -231,13 +243,13 @@ const getSummaryText = (
  *  If message is 'help', return help text.
  * @param message - userMessage
  */
-const checkHelp = (message: string) => {
+const checkHelp = (message: string) :string => {
   if (
     (message.match(/[a-zA-Z]{4}/) && message.toLowerCase() === 'help')
     || message === 'へるぷ'
     || message === 'ヘルプ'
   ) {
-    return helpMessage;
+    return HelpMessage;
   }
   return '';
 };
@@ -247,7 +259,7 @@ const checkHelp = (message: string) => {
  *
  * @param e - POST Data
  */
-export const doPost = (e: any) => {
+export const doPost = (e: GoogleAppsScript.Events.DoPost) => {
   const eventData: EventData = JSON.parse(e.postData.contents).events[0];
   // logging
   logging(e);
@@ -265,7 +277,7 @@ export const doPost = (e: any) => {
       return;
     }
 
-    // 対象日を取得
+    // Get target YYYY/MM/DD
     const [targetDate, rows]: [dayjs.Dayjs, string[]] = getTargetDate(message);
 
     // Get target sheet from targetDay.

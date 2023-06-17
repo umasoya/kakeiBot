@@ -10,7 +10,7 @@ export const AuthenticatedUsers: string[] = [
   PropertiesService.getScriptProperties().getProperty('user_id_miko')!,
 ];
 // ヘルプメッセージ
-export const helpMessage = `特定のフォーマットで発言することで、家計簿を更新できます。
+export const HelpMessage: string = `特定のフォーマットで発言することで、家計簿を更新できます。
 例)
 2023/01/01
 食材費 4000
@@ -32,3 +32,6 @@ export const helpMessage = `特定のフォーマットで発言することで�
 - 通信費
 - 貯金
 `;
+
+// セパレータ
+export const Separator :string = '====================';

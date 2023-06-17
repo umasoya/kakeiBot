@@ -235,6 +235,7 @@ const getSummaryText = (
   }
 
   // remaining money
+  summaries.push(`今月の残金: ${sheet.getRange(22, 16).getDisplayValue()}`);
 
   return summaries.join('\n');
 };

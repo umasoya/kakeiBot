@@ -3,6 +3,14 @@
 GoogleSpreadSheetで管理する我が家の家計簿をLINEから更新するためのBot.  
 Bot自体はGoogleAppScript上で動かしている.
 
+## dependencies
+
+```
+npm install -g @google/clasp
+
+clasp login
+```
+
 ## リリース
 
 コード変更後､claspでGASに最新版をアップロード  

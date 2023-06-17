@@ -187,7 +187,7 @@ const getSummaryText = (
   summaries.push(`${targetDate.format('YYYY/MM')}`);
   summaries.push(separator);
 
-  for (let col = 3; col < 13; col++) {
+  for (let col = 3; col < 13; col += 1) {
     let type: string;
     switch (col) {
       case 3:

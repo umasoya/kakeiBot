@@ -79,7 +79,8 @@ const getTargetDate = (text: string): [dayjs.Dayjs, string[]] => {
 
 const findRow = (date: dayjs.Dayjs, sheet: GoogleAppsScript.Spreadsheet.Sheet): number => {
   const dateStr: string = date.format('MM月DD日');
-  for (let i = 3; i <= sheet.getRange(3, 2, 31).getNumRows(); i++) {
+  const fromRow = 3;
+  for (let i = fromRow; i < (fromRow + 31); i++) {
     if (sheet.getRange(i, 2).getDisplayValue() === dateStr) {
       return i;
     }

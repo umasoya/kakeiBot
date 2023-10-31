@@ -23,5 +23,6 @@ module.exports = {
     '@typescript-eslint/quotes': ['error', 'single'],
     'tsdoc/syntax': 'warn',
     'no-continue': 'off',
+    'no-plusplus': 'off',
   },
 };
